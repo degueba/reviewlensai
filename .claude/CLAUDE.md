@@ -25,7 +25,7 @@ declined. No hallucinations. No drift. Just the data you loaded.
 ### Backend
 - Node.js + TypeScript
 - Vercel Serverless Functions — API routes under /api
-- Crawlee — review scraping (Trustpilot primary target)
+- iTunes App Store RSS API — review fetching (public, no auth required; paginated via itunes.apple.com/rss; app metadata via itunes.apple.com/lookup)
 - LangGraph.js — stateful AI graph with conditional edge guardrails
 - OpenAI GPT — LLM powering classification and answer nodes
 

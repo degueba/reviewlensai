@@ -1,6 +1,6 @@
 import { Annotation } from '@langchain/langgraph'
 import type { Review, Theme, Quote, AnalysisSummary } from '../types.js'
-import type { ScrapedData } from '../scraper/trustpilot.js'
+import type { ScrapedData } from '../scraper/itunes.js'
 
 export const IngestStateAnnotation = Annotation.Root({
   scrapedData: Annotation<ScrapedData | null>(),

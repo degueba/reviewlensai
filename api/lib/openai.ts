@@ -10,6 +10,6 @@ if (!apiKey) {
 // Singleton client — import this in nodes that need a base instance.
 // For node-specific temperatures, create a new ChatOpenAI({ apiKey, model, temperature }).
 export const openai = new ChatOpenAI({
-  model: 'gpt-4o',
+  model: 'gpt-4.1-mini',
   apiKey,
 })

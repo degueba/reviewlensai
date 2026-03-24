@@ -19,7 +19,7 @@ export default async function handler(req: Request, res: Response) {
 
   try {
     await runChatGraph(question, reviewTexts, (chunk) => {
-      res.write(`data: ${chunk}\n\n`)
+      res.write(`data: ${chunk.replace(/\n/g, '\\n')}\n\n`)
     })
     res.write('data: [DONE]\n\n')
   } catch (err) {

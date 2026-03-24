@@ -3,7 +3,7 @@
 **Status**: Planning
 **Author**: Claude Code
 **Date**: 2026-03-23
-**Target stack**: Node.js + TypeScript, Express (local) / Vercel Serverless (production), Crawlee, LangGraph.js, OpenAI GPT-4o, Zod
+**Target stack**: Node.js + TypeScript, Express (local) / Vercel Serverless (production), iTunes App Store API, LangGraph.js, OpenAI GPT-4o, Zod
 
 ---
 
@@ -11,7 +11,7 @@
 
 1. [Project Structure](#1-project-structure)
 2. [Zod Schemas & Request Contracts](#2-zod-schemas--request-contracts)
-3. [Trustpilot Scraper](#3-trustpilot-scraper)
+3. [iTunes App Store Fetcher](#3-itunes-app-store-fetcher)
 4. [LangGraph Ingest Graph](#4-langgraph-ingest-graph)
 5. [LangGraph Chat Graph](#5-langgraph-chat-graph)
 6. [System Prompts](#6-system-prompts)
@@ -43,8 +43,7 @@ api/
 │   ├── ingest.schema.ts
 │   └── chat.schema.ts
 ├── scraper/
-│   ├── trustpilot.ts
-│   └── selectors.ts
+│   └── itunes.ts
 └── lib/
     ├── openai.ts
     └── errors.ts
@@ -64,8 +63,7 @@ api/
 | `api/prompts/chat.ts` | System prompt for the guardrailed Q&A assistant | `CHAT_SYSTEM_PROMPT` |
 | `api/schemas/ingest.schema.ts` | Zod schemas for `POST /api/ingest` request body | `IngestUrlSchema`, `IngestTextSchema`, `IngestBodySchema` |
 | `api/schemas/chat.schema.ts` | Zod schemas for `POST /api/chat` request body | `ChatBodySchema` |
-| `api/scraper/trustpilot.ts` | Crawlee `PlaywrightCrawler` scraper; accepts a Trustpilot URL and returns `ScrapedData` | `scrapeTrustpilot` |
-| `api/scraper/selectors.ts` | All stable `data-*` and semantic HTML selector constants; never inline selectors elsewhere | `SELECTORS` (object of named constants) |
+| `api/scraper/itunes.ts` | iTunes App Store RSS API fetcher; accepts an App Store URL or numeric App ID and returns `ScrapedData` | `scrapeItunes`, `ScrapedData`, `ScrapedReview` |
 | `api/lib/openai.ts` | Singleton OpenAI client configured from `process.env.OPENAI_API_KEY` | `openai` |
 | `api/lib/errors.ts` | Internal error class definitions and a `toClientError` formatter that strips stack traces | `AppError`, `ScraperError`, `GraphError`, `toClientError` |
 
@@ -80,9 +78,12 @@ All schemas live in `api/schemas/`. Route handlers import and call `.safeParse()
 The ingest endpoint accepts either a URL (for scraping) or raw text (for direct analysis). Exactly one of the two must be present — they are mutually exclusive via a discriminated union.
 
 ```typescript
-// Accepts a valid Trustpilot (or any) URL
+// Accepts an App Store URL or numeric App ID
 IngestUrlSchema: z.object({
-  url: z.string().url({ message: 'Must be a valid URL' }),
+  url: z.string().refine(
+    (v) => /^\d+$/.test(v.trim()) || /id[=\/]?\d+/i.test(v),
+    'Must be an App Store URL (apps.apple.com/...id{digits}) or a numeric App ID'
+  ),
 })
 
 // Accepts pasted review text; minimum 50 characters ensures meaningful content
@@ -114,100 +115,92 @@ ChatBodySchema: z.object({
 
 ---
 
-## 3. Trustpilot Scraper
+## 3. iTunes App Store Fetcher
 
-### File: `api/scraper/selectors.ts`
+### File: `api/scraper/itunes.ts`
 
-All selectors are defined as named string constants in a single exported `SELECTORS` object. The scraper imports from this file exclusively — no selector strings appear inline in `trustpilot.ts`.
+Reviews are fetched from Apple's public iTunes RSS API — no authentication, no browser, no bot detection. Playwright and Browserless have been removed from the stack entirely.
 
-```typescript
-export const SELECTORS = {
-  // Review cards — one article element per review
-  REVIEW_CARD: 'article[data-service-review-card-paper="true"]',
+#### API Endpoints
 
-  // Inside each review card
-  REVIEWER_NAME: 'span[data-consumer-name-typography="true"]',
-  REVIEW_DATE:   'time[data-service-review-date-time-ago="true"]',
-  STAR_RATING:   'img[alt^="Rated"]',
-  REVIEW_TEXT:   'p[data-relevant-review-text-typography="true"]',
-
-  // Page-level metadata (outside review cards)
-  OVERALL_SCORE:    'p[data-rating-typography="true"]',
-  COMPANY_TITLE:    'h1#business-unit-title',
-  COMPANY_NAME_SPAN:'h1#business-unit-title span',
-} as const
+**App metadata** (called once per ingest):
+```
+GET https://itunes.apple.com/lookup?id={appId}
+→ results[0].trackName          → companyName
+→ results[0].averageUserRating  → overallScore (0.0–5.0)
+→ results[0].userRatingCount    → totalReviewCount
 ```
 
-**Star rating parsing rule**: The `alt` attribute of the rating image contains text in the form `"Rated 5 out of 5 stars"`. Extract the first integer by splitting on spaces and parsing `parts[1]` as a number.
+**Paginated reviews**:
+```
+GET https://itunes.apple.com/us/rss/customerreviews/page={n}/id={appId}/sortBy=mostRecent/json
+→ feed.entry[].author.name.label   → author
+→ feed.entry[][ "im:rating"].label → rating (string, parseInt to 1–5)
+→ feed.entry[].updated.label       → dateIso (ISO-8601 with tz offset)
+→ feed.entry[].content.label       → text
+```
 
-**Total review count parsing rule**: The `h1#business-unit-title` element contains a text node like `"Reviews 11,233"`. Strip the word "Reviews", remove commas, and parse as an integer.
+Each page returns up to 50 reviews. The API supports a maximum of 10 pages (500 reviews). `MAX_SCRAPE_PAGES` caps how many pages are fetched (default 5, clamped to 1–10).
 
-### File: `api/scraper/trustpilot.ts`
+**`feed.entry` edge case**: when only one review is present on a page, the API returns a single object instead of an array. Always normalise with `Array.isArray(raw) ? raw : [raw]`.
+
+#### Input Accepted
+
+| Input format | Example |
+|---|---|
+| Numeric App ID | `368677368` |
+| App Store URL | `https://apps.apple.com/us/app/uber/id=368677368` |
+| iTunes RSS URL | `https://itunes.apple.com/us/rss/customerreviews/id=368677368/...` |
+
+Extraction regex: `/id[=\/]?(\d+)/i` — covers all three forms.
 
 #### Output Types
 
 ```typescript
 interface ScrapedReview {
-  author: string       // text content of REVIEWER_NAME selector
-  rating: number       // 1–5, parsed from img[alt^="Rated"]
-  dateIso: string      // value of time[datetime] attribute (ISO 8601)
-  text: string         // text content of REVIEW_TEXT selector
+  author: string    // feed.entry[].author.name.label
+  rating: number    // 1–5, parseInt(feed.entry[][ "im:rating"].label)
+  dateIso: string   // feed.entry[].updated.label (ISO-8601)
+  text: string      // feed.entry[].content.label
 }
 
 interface ScrapedData {
-  companyName: string        // first span inside h1#business-unit-title
-  platform: 'Trustpilot'    // hardcoded literal — only Trustpilot is supported
-  url: string                // the canonical base URL that was scraped
-  overallScore: number       // 0–5 float, parsed from OVERALL_SCORE selector
-  totalReviewCount: number   // parsed from h1#business-unit-title text node
-  scrapedAt: string          // new Date().toISOString() at scrape completion
+  companyName: string       // lookup results[0].trackName
+  platform: string          // 'App Store' (hardcoded) or 'Text' for paste mode
+  url: string | null        // https://apps.apple.com/us/app/id{appId}, or null for paste mode
+  overallScore: number      // lookup results[0].averageUserRating
+  totalReviewCount: number  // lookup results[0].userRatingCount
+  scrapedAt: string         // new Date().toISOString() at fetch completion
   reviews: ScrapedReview[]
 }
 ```
 
-#### Function signature
+#### Function Signature
 
 ```typescript
-async function scrapeTrustpilot(url: string): Promise<ScrapedData>
+async function scrapeItunes(input: string): Promise<ScrapedData>
 ```
 
 #### Implementation Contract
 
-1. **Validate input URL**: confirm it contains `trustpilot.com/review/` before launching the crawler. Throw `ScraperError` otherwise.
+1. **Extract App ID**: if input is all digits, use directly. Otherwise apply regex `/id[=\/]?(\d+)/i`. Throw `ScraperError` if no match.
 
-2. **Determine max pages**: read `parseInt(process.env.MAX_SCRAPE_PAGES ?? '5', 10)`. Clamp to a minimum of 1.
+2. **Fetch app metadata**: `GET itunes.apple.com/lookup?id={appId}`. Throw `ScraperError` if `results` is empty.
 
-3. **Seed URL list**: build an array of page URLs:
-   ```
-   [
-     https://www.trustpilot.com/review/{slug}?page=1,
-     https://www.trustpilot.com/review/{slug}?page=2,
-     ...up to MAX_SCRAPE_PAGES
-   ]
-   ```
-   Pass all page URLs as the initial request queue. Crawlee will process them in parallel (configurable `maxConcurrency`).
+3. **Determine max pages**: `Math.max(1, Math.min(10, parseInt(process.env.MAX_SCRAPE_PAGES ?? '5', 10)))`.
 
-4. **Use `PlaywrightCrawler`**: Trustpilot is a Next.js application that renders review content client-side. A headless browser is required. `CheerioCrawler` will not work — it receives only the server-rendered HTML shell before hydration completes.
+4. **Paginate reviews**: loop `page = 1..maxPages`. For each page, `GET` the RSS endpoint. If `feed.entry` is absent or the returned array is empty, stop early.
 
-5. **Per-page extraction** (inside the `requestHandler` callback):
-   - Wait for `SELECTORS.REVIEW_CARD` to be present in the DOM before extracting.
-   - Query all review card elements.
-   - If zero review cards are found on a page that is not a 404, throw `ScraperError` with message `"No review cards found on page — possible bot detection or page structure change"`.
-   - For each card, extract all four fields using the selector constants. If `REVIEW_TEXT` is absent or empty, use an empty string (some reviews are rating-only).
-   - Collect results into a shared array (use a closure or dataset).
-
-6. **Page-level metadata**: extract `companyName`, `overallScore`, and `totalReviewCount` from the first page only (page 1). These fields are the same on every page.
-
-7. **Assemble and return** `ScrapedData` after all pages have been processed.
+5. **Assemble and return** `ScrapedData` after all pages are processed.
 
 #### Error Handling
 
 | Scenario | Behavior |
 |---|---|
-| URL does not contain `trustpilot.com/review/` | Throw `ScraperError('Invalid Trustpilot URL')` |
-| Zero review cards on a loaded page | Throw `ScraperError('No review cards found — possible bot detection')` |
-| Network timeout or navigation error | Crawlee will retry per its default retry policy; after max retries, the error propagates to the route handler |
-| Missing metadata fields (name / score) | Throw `ScraperError('Could not extract company metadata from page 1')` |
+| Input contains no recognisable App ID | Throw `ScraperError('Could not extract App ID')` |
+| iTunes lookup returns empty results | Throw `ScraperError('No app found for App ID {id}')` |
+| HTTP error on lookup or review page | Throw `ScraperError('iTunes fetch failed: {status}')` |
+| Empty `entry` on a page | Stop pagination early — no error thrown |
 
 ---
 
@@ -215,7 +208,7 @@ async function scrapeTrustpilot(url: string): Promise<ScrapedData>
 
 ### Design Rationale: Why LangGraph Instead of a Single LLM Call?
 
-A single structured LLM call — sending all reviews at once and asking for classifications, themes, quotes, and a summary in one prompt — is simpler and works fine for small datasets. However, ReviewLens is designed to handle Trustpilot pages with 100–500+ reviews (5 pages × up to 100 reviews per page). Scalability is a primary design constraint, not an afterthought.
+A single structured LLM call — sending all reviews at once and asking for classifications, themes, quotes, and a summary in one prompt — is simpler and works fine for small datasets. However, ReviewLens is designed to handle App Store feeds with 50–500 reviews (up to 10 pages × 50 reviews per page). Scalability is a primary design constraint, not an afterthought.
 
 | Consideration | LangGraph (multi-node) | Single LLM call |
 |---|---|---|

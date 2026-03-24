@@ -1,7 +1,10 @@
 import { z } from 'zod'
 
 export const IngestUrlSchema = z.object({
-  url: z.string().url('Must be a valid URL'),
+  url: z.string().refine(
+    (v) => /^\d+$/.test(v.trim()) || /id[=\/]?\d+/i.test(v),
+    'Must be an App Store URL (apps.apple.com/...id{digits}) or a numeric App ID'
+  ),
 })
 
 export const IngestTextSchema = z.object({

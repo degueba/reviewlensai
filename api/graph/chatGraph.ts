@@ -14,7 +14,7 @@ function buildSystemMessage(reviewTexts: string[], instruction: string): string 
 // ── Node 1: classifyQuestion ──────────────────────────────────────────────────
 async function classifyQuestion(state: ChatState): Promise<Partial<ChatState>> {
   const model = new ChatOpenAI({
-    model: 'gpt-4o',
+    model: 'gpt-4.1-mini',
     temperature: 0,
     apiKey: process.env.OPENAI_API_KEY,
   })
@@ -32,7 +32,7 @@ async function classifyQuestion(state: ChatState): Promise<Partial<ChatState>> {
 function createAnswerNode(onToken: (chunk: string) => void) {
   return async function answerQuestion(state: ChatState): Promise<Partial<ChatState>> {
     const model = new ChatOpenAI({
-      model: 'gpt-4o',
+      model: 'gpt-4.1-mini',
       temperature: 0.4,
       streaming: true,
       apiKey: process.env.OPENAI_API_KEY,
