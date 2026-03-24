@@ -1,8 +1,12 @@
-import type { Request, Response } from 'express'
+import express, { type Request, type Response } from 'express'
 import { ChatBodySchema } from './schemas/chat.schema.js'
 import { runChatGraph } from './graph/chatGraph.js'
 
 export default async function handler(req: Request, res: Response) {
+  if (!req.body) {
+    await new Promise<void>((resolve) => express.json()(req, res, () => resolve()))
+  }
+
   res.setHeader('Content-Type', 'text/event-stream')
   res.setHeader('Cache-Control', 'no-cache')
   res.setHeader('Connection', 'keep-alive')

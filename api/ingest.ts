@@ -1,4 +1,4 @@
-import type { Request, Response } from 'express'
+import express, { type Request, type Response } from 'express'
 import { IngestBodySchema } from './schemas/ingest.schema.js'
 import { scrapeItunes } from './scraper/itunes.js'
 import type { ScrapedData } from './scraper/itunes.js'
@@ -6,6 +6,10 @@ import { runIngestGraph } from './graph/ingestGraph.js'
 import { ScraperError, toClientError } from './lib/errors.js'
 
 export default async function handler(req: Request, res: Response) {
+  if (!req.body) {
+    await new Promise<void>((resolve) => express.json()(req, res, () => resolve()))
+  }
+
   const parsed = IngestBodySchema.safeParse(req.body)
   if (!parsed.success) {
     return res.status(400).json({ message: parsed.error.issues[0].message })
