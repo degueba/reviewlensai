@@ -1,7 +1,7 @@
 import { StateGraph, START, END } from '@langchain/langgraph'
 import { ChatOpenAI } from '@langchain/openai'
 import { ChatStateAnnotation, type ChatState } from './state.js'
-import { CHAT_SYSTEM_PROMPT, CHAT_CLASSIFY_INSTRUCTION, CHAT_ANSWER_INSTRUCTION, GUARDRAIL_MESSAGE } from '../prompts/chat.js'
+import { CHAT_SYSTEM_PROMPT, CHAT_CLASSIFY_INSTRUCTION, CHAT_ANSWER_INSTRUCTION, GUARDRAIL_MESSAGE } from '../_prompts/chat.js'
 
 // ── Shared context builder ────────────────────────────────────────────────────
 function buildSystemMessage(reviewTexts: string[], instruction: string): string {

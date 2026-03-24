@@ -2,5 +2,5 @@
   "watch": ["api"],
   "ext": "ts",
   "delay": 500,
-  "exec": "tsx api/server.ts"
+  "exec": "tsx api/_server.ts"
 }

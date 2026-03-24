@@ -1,11 +1,11 @@
 import { StateGraph, START, END } from '@langchain/langgraph'
 import { ChatOpenAI } from '@langchain/openai'
 import { IngestStateAnnotation, type IngestState } from './state.js'
-import { CLASSIFY_SYSTEM_PROMPT } from '../prompts/classify.js'
-import { QUOTES_SYSTEM_PROMPT, SUMMARY_SYSTEM_PROMPT } from '../prompts/summarize.js'
-import type { Review, Theme, Quote, AnalysisSummary, AnalysisPayload } from '../types.js'
-import type { ScrapedData } from '../scraper/itunes.js'
-import { GraphError } from '../lib/errors.js'
+import { CLASSIFY_SYSTEM_PROMPT } from '../_prompts/classify.js'
+import { QUOTES_SYSTEM_PROMPT, SUMMARY_SYSTEM_PROMPT } from '../_prompts/summarize.js'
+import type { Review, Theme, Quote, AnalysisSummary, AnalysisPayload } from '../_types.js'
+import type { ScrapedData } from '../_scraper/itunes.js'
+import { GraphError } from '../_lib/errors.js'
 
 const CLASSIFY_BATCH_SIZE = 20
 

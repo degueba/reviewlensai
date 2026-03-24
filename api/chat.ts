@@ -1,6 +1,6 @@
 import express, { type Request, type Response } from 'express'
-import { ChatBodySchema } from './schemas/chat.schema.js'
-import { runChatGraph } from './graph/chatGraph.js'
+import { ChatBodySchema } from './_schemas/chat.schema.js'
+import { runChatGraph } from './_graph/chatGraph.js'
 
 export default async function handler(req: Request, res: Response) {
   if (!req.body) {

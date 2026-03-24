@@ -1,9 +1,9 @@
 import express, { type Request, type Response } from 'express'
-import { IngestBodySchema } from './schemas/ingest.schema.js'
-import { scrapeItunes } from './scraper/itunes.js'
-import type { ScrapedData } from './scraper/itunes.js'
-import { runIngestGraph } from './graph/ingestGraph.js'
-import { ScraperError, toClientError } from './lib/errors.js'
+import { IngestBodySchema } from './_schemas/ingest.schema.js'
+import { scrapeItunes } from './_scraper/itunes.js'
+import type { ScrapedData } from './_scraper/itunes.js'
+import { runIngestGraph } from './_graph/ingestGraph.js'
+import { ScraperError, toClientError } from './_lib/errors.js'
 
 export default async function handler(req: Request, res: Response) {
   if (!req.body) {
