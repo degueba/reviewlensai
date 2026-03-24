@@ -1,4 +1,4 @@
-import { ScraperError } from '../lib/errors.js'
+import { ScraperError } from '../_lib/errors.js'
 
 export interface ScrapedReview {
   author: string
