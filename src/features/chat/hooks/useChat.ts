@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useAnalysisStore } from '@/store/analysisStore'
+import { api } from '@/lib/api'
 import type { ChatStatus } from '../types'
 
 export function useChat() {
@@ -26,11 +27,7 @@ export function useChat() {
 
     try {
       const reviewTexts = reviews.map((r) => r.text)
-      const res = await fetch('/api/chat', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ question, reviewTexts }),
-      })
+      const res = await api.chat(question, reviewTexts)
 
       if (!res.ok || !res.body) throw new Error('Stream failed')
 
@@ -73,7 +70,7 @@ export function useChat() {
             return
           }
 
-          accumulated += data
+          accumulated += data.replace(/\\n/g, '\n')
           setStreamingBuffer(accumulated)
         }
       }

@@ -9,10 +9,14 @@ interface AnalysisState {
   quotes: Quote[]
   reviews: Review[]
   chatHistory: ChatMessage[]
+  isLoading: boolean
+  loadingError: string | null
   setAnalysis: (payload: AnalysisPayload) => void
   appendChatMessage: (msg: ChatMessage) => void
   clearAnalysis: () => void
   hasData: () => boolean
+  setLoading: (v: boolean) => void
+  setLoadingError: (msg: string | null) => void
 }
 
 export const useAnalysisStore = create<AnalysisState>()(
@@ -24,6 +28,8 @@ export const useAnalysisStore = create<AnalysisState>()(
       quotes: [],
       reviews: [],
       chatHistory: [],
+      isLoading: false,
+      loadingError: null,
       setAnalysis: (payload) =>
         set({
           source: payload.source,
@@ -36,8 +42,10 @@ export const useAnalysisStore = create<AnalysisState>()(
       appendChatMessage: (msg) =>
         set((state) => ({ chatHistory: [...state.chatHistory, msg] })),
       clearAnalysis: () =>
-        set({ source: null, summary: null, themes: [], quotes: [], reviews: [], chatHistory: [] }),
+        set({ source: null, summary: null, themes: [], quotes: [], reviews: [], chatHistory: [], isLoading: false, loadingError: null }),
       hasData: () => get().source !== null,
+      setLoading: (v) => set({ isLoading: v }),
+      setLoadingError: (msg) => set({ loadingError: msg }),
     }),
     {
       name: 'reviewlens-analysis',

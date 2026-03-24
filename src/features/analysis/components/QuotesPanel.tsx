@@ -1,5 +1,6 @@
 import { cn } from '@/lib/utils'
 import { useAnalysisStore } from '@/store/analysisStore'
+import { Skeleton } from '@/components/ui/skeleton'
 
 const accentLeft = {
   positive: 'border-l-emerald-500',
@@ -15,12 +16,21 @@ const badgeStyle = {
 
 export function QuotesPanel() {
   const quotes = useAnalysisStore((s) => s.quotes)
+  const isLoading = useAnalysisStore((s) => s.isLoading)
 
   return (
     <div className="rounded-xl border border-border bg-card p-5">
       <h2 className="mb-4 text-sm font-semibold text-foreground">Key Quotes</h2>
       <div className="space-y-3">
-        {quotes.map((quote) => (
+        {isLoading
+          ? Array.from({ length: 3 }).map((_, i) => (
+              <div key={i} className="border-l-2 border-muted pl-3 space-y-1.5">
+                <Skeleton className="h-3.5 w-full" />
+                <Skeleton className="h-3.5 w-4/5" />
+                <Skeleton className="h-3 w-24" />
+              </div>
+            ))
+          : quotes.map((quote) => (
           <blockquote
             key={quote.id}
             className={cn('border-l-2 pl-3', accentLeft[quote.sentiment])}

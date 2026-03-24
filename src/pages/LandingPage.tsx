@@ -9,7 +9,6 @@ export function LandingPage() {
         <IngestForm />
         <HowItWorksSection />
       </main>
-      <IngestFooter />
     </div>
   )
 }

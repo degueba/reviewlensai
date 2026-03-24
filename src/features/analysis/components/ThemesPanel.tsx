@@ -1,5 +1,6 @@
 import { cn } from '@/lib/utils'
 import { useAnalysisStore } from '@/store/analysisStore'
+import { Skeleton } from '@/components/ui/skeleton'
 
 const sentimentColor = {
   positive: 'bg-emerald-500',
@@ -15,12 +16,23 @@ const sentimentBadge = {
 
 export function ThemesPanel() {
   const themes = useAnalysisStore((s) => s.themes)
+  const isLoading = useAnalysisStore((s) => s.isLoading)
 
   return (
     <div className="rounded-xl border border-border bg-card p-5">
       <h2 className="mb-4 text-sm font-semibold text-foreground">Themes Breakdown</h2>
       <div className="space-y-4">
-        {themes.map((theme) => (
+        {isLoading
+          ? Array.from({ length: 5 }).map((_, i) => (
+              <div key={i} className="space-y-1.5">
+                <div className="flex items-center justify-between">
+                  <Skeleton className="h-4 w-32" />
+                  <Skeleton className="h-4 w-20" />
+                </div>
+                <Skeleton className="h-1.5 w-full" />
+              </div>
+            ))
+          : themes.map((theme) => (
           <div key={theme.id}>
             <div className="mb-1.5 flex items-center justify-between">
               <span className="text-sm font-medium text-foreground">{theme.label}</span>

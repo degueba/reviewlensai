@@ -1,4 +1,7 @@
 import { useEffect, useRef } from 'react'
+import ReactMarkdown from 'react-markdown'
+import remarkGfm from 'remark-gfm'
+import rehypeSanitize from 'rehype-sanitize'
 import { GuardrailMessage } from './GuardrailMessage'
 import type { ChatMessage } from '@/types'
 import type { ChatStatus } from '../types'
@@ -45,7 +48,11 @@ export function ChatMessageThread({ messages, status, streamingBuffer }: ChatMes
         return (
           <div key={msg.id} className="flex justify-start">
             <div className="max-w-[80%] rounded-xl rounded-bl-sm bg-secondary px-3 py-2 text-sm text-foreground">
-              {msg.content}
+              <div className="prose prose-sm prose-invert max-w-none">
+                <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeSanitize]}>
+                  {msg.content}
+                </ReactMarkdown>
+              </div>
             </div>
           </div>
         )
@@ -53,7 +60,11 @@ export function ChatMessageThread({ messages, status, streamingBuffer }: ChatMes
       {status === 'thinking' && streamingBuffer && (
         <div className="flex justify-start">
           <div className="max-w-[80%] rounded-xl rounded-bl-sm bg-secondary px-3 py-2 text-sm text-foreground">
-            {streamingBuffer}
+            <div className="prose prose-sm prose-invert max-w-none">
+              <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeSanitize]}>
+                {streamingBuffer}
+              </ReactMarkdown>
+            </div>
             <span className="ml-0.5 inline-block size-1.5 animate-pulse rounded-full bg-muted-foreground" />
           </div>
         </div>

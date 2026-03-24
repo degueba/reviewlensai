@@ -1,37 +1,40 @@
 import type { AnalysisPayload } from '@/types'
 
-const BASE_URL = '/api'
+const BASE_URL = import.meta.env.VITE_API_URL
 
 async function request<T>(path: string, options?: RequestInit): Promise<T> {
   const res = await fetch(`${BASE_URL}${path}`, {
     headers: { 'Content-Type': 'application/json' },
     ...options,
   })
+
   if (!res.ok) {
     const body = await res.json().catch(() => ({}))
-    throw new Error((body as { message?: string }).message ?? `Request failed: ${res.status}`)
+    throw new Error(
+      (body as { message?: string }).message ?? `Request failed: ${res.status}`
+    )
   }
+
   return res.json() as Promise<T>
 }
 
 export const api = {
   ingestUrl: (url: string): Promise<AnalysisPayload> =>
-    request<AnalysisPayload>('/ingest', {
+    request<AnalysisPayload>('/api/ingest', {
       method: 'POST',
       body: JSON.stringify({ url }),
     }),
 
   ingestText: (text: string): Promise<AnalysisPayload> =>
-    request<AnalysisPayload>('/ingest', {
+    request<AnalysisPayload>('/api/ingest', {
       method: 'POST',
       body: JSON.stringify({ text }),
     }),
 
-  // Note: chat uses SSE streaming — useChat.ts calls fetch directly instead of this method.
-  // This stub is kept for type-reference only.
-  chat: (question: string, reviewTexts: string[]): Promise<{ answer: string; guardrailed: boolean }> =>
-    request('/chat', {
+  chat: (question: string, reviewTexts: string[]): Promise<Response> =>
+    fetch(`${BASE_URL}/api/chat`, {
       method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ question, reviewTexts }),
     }),
 }
