@@ -6,9 +6,10 @@ import type { ChatStatus } from '../types'
 interface ChatMessageThreadProps {
   messages: ChatMessage[]
   status: ChatStatus
+  streamingBuffer: string
 }
 
-export function ChatMessageThread({ messages, status }: ChatMessageThreadProps) {
+export function ChatMessageThread({ messages, status, streamingBuffer }: ChatMessageThreadProps) {
   const bottomRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
@@ -49,7 +50,15 @@ export function ChatMessageThread({ messages, status }: ChatMessageThreadProps) 
           </div>
         )
       })}
-      {status === 'thinking' && (
+      {status === 'thinking' && streamingBuffer && (
+        <div className="flex justify-start">
+          <div className="max-w-[80%] rounded-xl rounded-bl-sm bg-secondary px-3 py-2 text-sm text-foreground">
+            {streamingBuffer}
+            <span className="ml-0.5 inline-block size-1.5 animate-pulse rounded-full bg-muted-foreground" />
+          </div>
+        </div>
+      )}
+      {status === 'thinking' && !streamingBuffer && (
         <div className="flex justify-start">
           <div className="flex items-center gap-1 rounded-xl rounded-bl-sm bg-secondary px-3 py-2.5">
             <span className="size-1.5 animate-bounce rounded-full bg-muted-foreground [animation-delay:-0.3s]" />

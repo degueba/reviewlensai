@@ -10,7 +10,7 @@ interface ChatDrawerProps {
 }
 
 export function ChatDrawer({ open, onClose }: ChatDrawerProps) {
-  const { chatHistory, status, input, setInput, sendMessage } = useChat()
+  const { chatHistory, status, input, setInput, sendMessage, streamingBuffer } = useChat()
 
   return (
     <Sheet open={open} onOpenChange={(o) => !o && onClose()}>
@@ -21,7 +21,7 @@ export function ChatDrawer({ open, onClose }: ChatDrawerProps) {
             Ask AI about these reviews
           </SheetTitle>
         </SheetHeader>
-        <ChatMessageThread messages={chatHistory} status={status} />
+        <ChatMessageThread messages={chatHistory} status={status} streamingBuffer={streamingBuffer} />
         <ChatInputBar
           value={input}
           onChange={setInput}

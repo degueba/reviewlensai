@@ -2,11 +2,11 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { Button } from '@/components/ui/button'
-import { Link2, FileText } from 'lucide-react'
+import { Link2, FileText, Loader2 } from 'lucide-react'
 import { useIngest } from '../hooks/useIngest'
 
 export function IngestForm() {
-  const { state, setMode, setUrl, setText, submit } = useIngest()
+  const { state, setMode, setUrl, setText, submit, loading, error } = useIngest()
 
   return (
     <div className="w-full max-w-xl rounded-xl border border-border bg-card p-6 shadow-lg">
@@ -48,9 +48,12 @@ export function IngestForm() {
           </p>
         </TabsContent>
 
-        {/* Row 3: submit */}
-        <Button className="w-full" onClick={submit} size="lg">
-          Analyze Reviews
+        {/* Row 3: error + submit */}
+        {error && (
+          <p className="text-xs text-destructive">{error}</p>
+        )}
+        <Button className="w-full" onClick={submit} size="lg" disabled={loading}>
+          {loading ? <><Loader2 className="size-4 animate-spin" /> Analyzing…</> : 'Analyze Reviews'}
         </Button>
       </Tabs>
     </div>

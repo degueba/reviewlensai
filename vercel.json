@@ -1,0 +1,15 @@
+{
+  "framework": "vite",
+  "buildCommand": "vite build",
+  "outputDirectory": "dist",
+  "installCommand": "npm install",
+  "functions": {
+    "api/ingest.ts": { "maxDuration": 60 },
+    "api/chat.ts": { "maxDuration": 30 }
+  },
+  "rewrites": [
+    { "source": "/api/ingest", "destination": "/api/ingest" },
+    { "source": "/api/chat", "destination": "/api/chat" },
+    { "source": "/(.*)", "destination": "/index.html" }
+  ]
+}

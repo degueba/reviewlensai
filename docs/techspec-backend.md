@@ -1136,18 +1136,18 @@ Document the chosen approach before beginning the scraper implementation.
 ## 11. TODO List
 
 ```
-1.  Set up api/ folder structure and tsconfig
-2.  Install backend dependencies (express, langgraph, openai, crawlee, playwright, zod)
-3.  Define Zod schemas — ingest.schema.ts and chat.schema.ts
-4.  Write selector constants in api/scraper/selectors.ts
-5.  Implement Trustpilot scraper with pagination in api/scraper/trustpilot.ts
-6.  Write system prompts — classify.ts, summarize.ts (three exports), chat.ts
-7.  Define LangGraph state schema in api/graph/state.ts
-8.  Implement ingest graph — all five nodes — in api/graph/ingestGraph.ts
-9.  Implement chat graph with guardrail conditional edge in api/graph/chatGraph.ts
-10. Implement POST /api/ingest route handler in api/ingest.ts
-11. Implement POST /api/chat SSE route handler in api/chat.ts
-12. Add Vite proxy config and wire useIngest to real API call
-13. Refactor useChat to use fetch ReadableStream for SSE consumption
-14. End-to-end test with https://www.trustpilot.com/review/lendingclub.com
+1.  [x] Set up api/ folder structure and tsconfig
+2.  [x] Install backend dependencies (express, langgraph, openai, crawlee, playwright, zod)
+3.  [x] Define Zod schemas — ingest.schema.ts and chat.schema.ts
+4.  [x] Write selector constants in api/scraper/selectors.ts
+5.  [x] Implement Trustpilot scraper with pagination in api/scraper/trustpilot.ts
+6.  [x] Write system prompts — classify.ts, summarize.ts (three exports), chat.ts
+7.  [x] Define LangGraph state schema in api/graph/state.ts
+8.  [x] Implement ingest graph — all five nodes — in api/graph/ingestGraph.ts
+9.  [x] Implement chat graph with guardrail conditional edge in api/graph/chatGraph.ts
+10. [x] Implement POST /api/ingest route handler in api/ingest.ts
+11. [x] Implement POST /api/chat SSE route handler in api/chat.ts
+12. [x] Add Vite proxy config and wire useIngest to real API call
+13. [x] Refactor useChat to use fetch ReadableStream for SSE consumption
+14. [ ] End-to-end test with https://www.trustpilot.com/review/lendingclub.com
 ```

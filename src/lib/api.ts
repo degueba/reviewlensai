@@ -27,9 +27,11 @@ export const api = {
       body: JSON.stringify({ text }),
     }),
 
-  chat: (question: string, reviewIds: string[]): Promise<{ answer: string; guardrailed: boolean }> =>
+  // Note: chat uses SSE streaming — useChat.ts calls fetch directly instead of this method.
+  // This stub is kept for type-reference only.
+  chat: (question: string, reviewTexts: string[]): Promise<{ answer: string; guardrailed: boolean }> =>
     request('/chat', {
       method: 'POST',
-      body: JSON.stringify({ question, reviewIds }),
+      body: JSON.stringify({ question, reviewTexts }),
     }),
 }
